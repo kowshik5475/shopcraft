@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ShopCraft — Elevating the Everyday</title>
+  <meta name="description" content="Discover a curated collection of thoughtfully designed products for the modern home." />
+  <meta property="og:title" content="ShopCraft — Elevating the Everyday" />
+  <meta property="og:description" content="Curated products for the considered home." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+  <!-- ── Navbar ── -->
+  <nav class="navbar" role="navigation" aria-label="Main navigation">
+    <div class="container">
+      <a href="index.html" class="nav-logo" aria-label="ShopCraft home">Shop<span>Craft</span></a>
+      <div class="nav-links">
+        <a href="products.html">Catalog</a>
+        <a href="products.html?category=Furniture">Furniture</a>
+        <a href="products.html?category=Lighting">Lighting</a>
+      </div>
+      <div class="nav-actions">
+        <a href="cart.html" class="cart-btn" aria-label="Shopping cart">
+          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+          <span class="cart-badge" id="cart-badge" aria-live="polite" aria-label="Cart item count"></span>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+
+    <!-- ── Hero ── -->
+    <section class="hero" aria-labelledby="hero-heading">
+      <img src="https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?q=80&w=2000&auto=format&fit=crop" alt="Modern interior" class="hero-img" loading="eager" />
+      <div class="hero-overlay"></div>
+      <div class="container">
+        <div class="hero-content">
+          <h1 id="hero-heading">Elevating the everyday.</h1>
+          <p>Discover a curated collection of thoughtfully designed products for the modern home. Form meets function in perfect harmony.</p>
+          <a href="products.html" class="btn btn-primary btn-lg">Shop the Collection →</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Stats ── -->
+    <div class="stats-strip" aria-label="Store statistics">
+      <div class="container">
+        <div class="stats-grid" id="stats-grid">
+          <div class="stat-item"><div class="stat-num" id="stat-products">20</div><div class="stat-lbl">Products</div></div>
+          <div class="stat-item"><div class="stat-num" id="stat-categories">10</div><div class="stat-lbl">Categories</div></div>
+          <div class="stat-item"><div class="stat-num" id="stat-instock">20</div><div class="stat-lbl">In Stock</div></div>
+          <div class="stat-item"><div class="stat-num" id="stat-featured">7</div><div class="stat-lbl">Featured</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Featured Products ── -->
+    <section class="section" aria-labelledby="featured-heading">
+      <div class="container">
+        <div class="section-header-row">
+          <div>
+            <h2 id="featured-heading">Featured Selection</h2>
+            <p class="text-muted">Handpicked items that define our aesthetic.</p>
+          </div>
+          <a href="products.html" class="view-all">View all products →</a>
+        </div>
+        <div class="product-grid" id="featured-grid" aria-label="Featured products">
+          <!-- Skeleton placeholders -->
+          <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-line" style="width:60%"></div><div class="skeleton skeleton-line" style="width:30%"></div></div>
+          <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-line" style="width:60%"></div><div class="skeleton skeleton-line" style="width:30%"></div></div>
+          <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-line" style="width:60%"></div><div class="skeleton skeleton-line" style="width:30%"></div></div>
+          <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-line" style="width:60%"></div><div class="skeleton skeleton-line" style="width:30%"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Categories ── -->
+    <section class="section" style="background:#fff;padding-top:60px;padding-bottom:80px;" aria-labelledby="categories-heading">
+      <div class="container">
+        <div class="section-header" style="text-align:center;max-width:520px;margin:0 auto 48px;">
+          <h2 id="categories-heading">Shop by Category</h2>
+          <p class="text-muted mt-8">Explore our curated selections grouped by spaces and functions.</p>
+        </div>
+        <div class="category-grid" id="category-grid" aria-label="Product categories">
+          <!-- filled by JS -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── Footer ── -->
+  <footer>
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="footer-brand">Shop<span>Craft</span></div>
+          <p class="footer-desc">Thoughtfully curated products for the considered home. Quality over quantity, always.</p>
+        </div>
+        <div class="footer-col">
+          <h4>Shop</h4>
+          <ul>
+            <li><a href="products.html">All Products</a></li>
+            <li><a href="products.html?featured=true">Featured</a></li>
+            <li><a href="products.html?sort=newest">New Arrivals</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Info</h4>
+          <ul>
+            <li><a href="#">About Us</a></li>
+            <li><a href="#">Shipping</a></li>
+            <li><a href="#">Returns</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Support</h4>
+          <ul>
+            <li><a href="#">Contact</a></li>
+            <li><a href="#">FAQ</a></li>
+            <li><a href="#">Accessibility</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">&copy; 2024 ShopCraft. All rights reserved.</div>
+    </div>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="data/products.js"></script>
+  <script src="js/cart.js"></script>
+  <script src="js/home.js"></script>
+</body>
+</html>

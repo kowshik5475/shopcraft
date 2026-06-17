@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Product | ShopCraft</title>
+  <meta name="description" content="View product details." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+  <nav class="navbar" role="navigation" aria-label="Main navigation">
+    <div class="container">
+      <a href="index.html" class="nav-logo" aria-label="ShopCraft home">Shop<span>Craft</span></a>
+      <div class="nav-links">
+        <a href="products.html">Catalog</a>
+        <a href="products.html?category=Furniture">Furniture</a>
+        <a href="products.html?category=Lighting">Lighting</a>
+      </div>
+      <div class="nav-actions">
+        <a href="cart.html" class="cart-btn" aria-label="Shopping cart">
+          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+          <span class="cart-badge" id="cart-badge" aria-live="polite"></span>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <section class="detail-section">
+      <div class="container">
+        <a href="products.html" class="back-link" aria-label="Back to catalog">
+          ← Back to all products
+        </a>
+        <div id="product-detail-root">
+          <!-- Skeleton -->
+          <div class="detail-grid">
+            <div class="skeleton" style="aspect-ratio:1/1;border-radius:8px;"></div>
+            <div style="display:flex;flex-direction:column;gap:16px;">
+              <div class="skeleton skeleton-line" style="width:70%;height:20px;"></div>
+              <div class="skeleton skeleton-line" style="width:40%;height:36px;"></div>
+              <div class="skeleton skeleton-line" style="width:25%;height:28px;"></div>
+              <div class="skeleton skeleton-line" style="height:100px;"></div>
+              <div class="skeleton skeleton-line" style="height:48px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <div class="footer-grid">
+        <div><div class="footer-brand">Shop<span>Craft</span></div><p class="footer-desc">Thoughtfully curated products for the considered home.</p></div>
+        <div class="footer-col"><h4>Shop</h4><ul><li><a href="products.html">All Products</a></li></ul></div>
+        <div class="footer-col"><h4>Info</h4><ul><li><a href="#">About</a></li></ul></div>
+        <div class="footer-col"><h4>Support</h4><ul><li><a href="#">Contact</a></li></ul></div>
+      </div>
+      <div class="footer-bottom">&copy; 2024 ShopCraft. All rights reserved.</div>
+    </div>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="data/products.js"></script>
+  <script src="js/cart.js"></script>
+  <script src="js/product-detail.js"></script>
+</body>
+</html>
