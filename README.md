@@ -1,47 +1,126 @@
-# ShopCraft — Static Site
 
-A fully static HTML5 + CSS3 + Vanilla JavaScript e-commerce product catalog.  
-No build step required. Deploy directly to Vercel, Netlify, or GitHub Pages.
+# ShopCraft – E-Commerce Product Catalog
 
-## File Structure
+## Overview
 
-```
-shopcraft-static/
-├── index.html          ← Home page (hero, featured products, categories)
-├── products.html       ← Full catalog (search, filter, sort, pagination)
-├── product.html        ← Product detail page
-├── cart.html           ← Shopping cart (localStorage)
-├── css/
-│   └── styles.css      ← All styles (responsive, accessible)
-├── js/
-│   ├── cart.js         ← Cart utilities (localStorage)
-│   ├── home.js         ← Home page logic
-│   ├── products.js     ← Catalog: search, filter, sort, pagination
-│   ├── product-detail.js ← Detail page + add-to-cart
-│   └── cart-page.js    ← Cart page rendering + actions
-├── data/
-│   └── products.js     ← 20 seeded products + CATEGORIES array
-└── vercel.json         ← Vercel routing config
-```
+ShopCraft is a responsive e-commerce product catalog developed using HTML5, CSS3, and Vanilla JavaScript. The application allows users to browse products, view detailed product information, search and filter products, and manage a shopping cart using browser local storage.
+
+## Live Demo
+
+Vercel Deployment: https://shopcraft-wiyu.vercel.app/
+
+## GitHub Repository
+
+GitHub Repository: https://github.com/kowshik5475/shopcraft
+
+## Technologies Used
+
+* HTML5
+* CSS3
+* JavaScript (ES6)
+* Local Storage API
+* Vercel Hosting
 
 ## Features
 
-- **Search** — debounced 380ms, searches name + description + category
-- **Filter** — by category, in-stock toggle, active filter chips
-- **Sort** — newest, price low/high, name A–Z, highest rated
-- **Pagination** — 12 per page with ellipsis navigation
-- **Cart** — localStorage persistence, quantity controls, order summary
-- **SEO** — unique `<title>` and `<meta description>` on every page
-- **Accessibility** — ARIA labels, `aria-live` regions, keyboard navigation
-- **Responsive** — mobile-first, works on all screen sizes
+* Responsive design for desktop, tablet, and mobile devices
+* Product catalog with search functionality
+* Category-based filtering
+* Product sorting options
+* Product detail pages
+* Shopping cart with quantity management
+* Local storage persistence
+* SEO-friendly structure
+* Accessibility support using ARIA attributes
 
-## Deploy to Vercel
+## Project Structure
 
-1. Upload this folder (or push to GitHub)
-2. On [vercel.com](https://vercel.com), import the project
-3. Framework: **Other** (static site — no build command needed)
-4. Click Deploy ✅
+shopcraft-static/
 
-## Deploy to Netlify
+├── index.html
 
-Drag-and-drop the `shopcraft-static` folder onto [netlify.com/drop](https://app.netlify.com/drop).
+├── products.html
+
+├── product.html
+
+├── cart.html
+
+├── css/
+
+│ └── styles.css
+
+├── js/
+
+│ ├── cart.js
+
+│ ├── home.js
+
+│ ├── products.js
+
+│ ├── product-detail.js
+
+│ └── cart-page.js
+
+├── data/
+
+│ └── products.js
+
+└── vercel.json
+
+## System Architecture
+
+User
+
+↓
+
+Web Browser
+
+↓
+
+HTML Interface
+
+↓
+
+CSS Styling Layer
+
+↓
+
+JavaScript Application Logic
+
+↓
+
+Product Data Layer
+
+↓
+
+Local Storage Cart Management
+
+## Key Learning Outcomes
+
+* Front-end web development using HTML, CSS, and JavaScript
+* Responsive web design principles
+* Client-side data management using Local Storage
+* Search, filtering, and pagination implementation
+* Website deployment using Vercel
+* Accessibility and SEO best practices
+
+## Future Enhancements
+
+* User authentication
+* Product reviews and ratings
+* Wishlist functionality
+* Payment gateway integration
+* Backend database support
+
+## Deployment Instructions
+
+1. Clone the repository.
+2. Open the project folder.
+3. Deploy directly to Vercel or Netlify.
+4. No build step is required.
+
+## Author
+
+Dhuli Venkata Sai Kowshik
+
+B.Tech CSE (2024–2028)
