@@ -4,6 +4,11 @@
   "rewrites": [
     { "source": "/products", "destination": "/products.html" },
     { "source": "/product",  "destination": "/product.html"  },
-    { "source": "/cart",     "destination": "/cart.html"     }
+    { "source": "/cart",     "destination": "/cart.html"     },
+    { "source": "/account",  "destination": "/account.html"  },
+    { "source": "/wishlist", "destination": "/wishlist.html" },
+    { "source": "/orders",   "destination": "/orders.html"   },
+    { "source": "/checkout", "destination": "/checkout.html" },
+    { "source": "/order-confirmation", "destination": "/order-confirmation.html" }
   ]
 }

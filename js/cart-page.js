@@ -17,11 +17,13 @@ function renderCart() {
 
   // Enrich items with product data
   const enriched = items.map(i => {
-    const product = PRODUCTS.find(p => p.id === i.productId);
-    return product ? { ...i, product } : null;
-  }).filter(Boolean);
+    const product = window.ShopCraftLiveProducts?.get(i.productId) || PRODUCTS.find(p => p.id === i.productId) || unavailableCartProduct(i.productId);
+    return { ...i, product };
+  });
 
-  const subtotal = enriched.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
+  const subtotalCents = enriched.reduce((sum, i) => sum + Math.round(i.product.price * 100) * i.quantity, 0);
+  const subtotal = subtotalCents / 100;
+  const shipping = subtotalCents >= 15000 ? 0 : subtotalCents > 0 ? 12 : 0;
   const itemCount = enriched.reduce((sum, i) => sum + i.quantity, 0);
 
   document.title = "Your Cart (" + itemCount + ") | ShopCraft";
@@ -46,13 +48,13 @@ function renderCart() {
         <div class="order-summary" aria-label="Order summary">
           <h2>Order Summary</h2>
           <div class="summary-row"><span>Subtotal (${itemCount} ${itemCount === 1 ? "item" : "items"})</span><span>${formatCurrency(subtotal)}</span></div>
-          <div class="summary-row"><span>Shipping</span><span>Calculated at checkout</span></div>
-          <div class="summary-row"><span>Taxes</span><span>Calculated at checkout</span></div>
+          <div class="summary-row"><span>Shipping</span><span>${shipping ? formatCurrency(shipping) : "Complimentary"}</span></div>
+          <div class="summary-row"><span>Taxes</span><span>Not calculated</span></div>
           <hr class="summary-divider" />
-          <div class="summary-total"><span>Estimated Total</span><span>${formatCurrency(subtotal)}</span></div>
-          <button class="btn btn-primary btn-lg checkout-btn" aria-label="Proceed to checkout">
+          <div class="summary-total"><span>Estimated Total</span><span>${formatCurrency(subtotal + shipping)}</span></div>
+          <a href="checkout.html" class="btn btn-primary btn-lg checkout-btn" aria-label="Proceed to checkout">
             Proceed to Checkout →
-          </button>
+          </a>
           <a href="products.html" class="continue-link">Continue Shopping</a>
         </div>
       </aside>
@@ -82,27 +84,29 @@ function renderCart() {
     } else if (incBtn) {
       const id = parseInt(incBtn.dataset.id);
       const item = getCart().find(i => i.productId === id);
-      const product = PRODUCTS.find(p => p.id === id);
+      const product = window.ShopCraftLiveProducts?.get(id) || PRODUCTS.find(p => p.id === id);
       if (item && product && item.quantity < product.stock) { updateQuantity(id, item.quantity + 1); renderCart(); }
     }
   });
 }
 
 function renderCartItem(i) {
+  const name = escapeCartHtml(i.product.name);
+  const imageUrl = escapeCartHtml(i.product.imageUrl);
   return `
     <li class="cart-item" data-id="${i.productId}">
       <div class="cart-item-info">
-        <a href="product.html?id=${i.product.id}" class="cart-item-img" aria-label="View ${i.product.name}">
-          <img src="${i.product.imageUrl}" alt="${i.product.name}" loading="lazy" />
+        <a href="product.html?id=${i.product.id}" class="cart-item-img" aria-label="View ${name}">
+          <img src="${imageUrl}" alt="${name}" loading="lazy" />
         </a>
         <div>
-          <a href="product.html?id=${i.product.id}" class="cart-item-name">${i.product.name}</a>
+          <a href="product.html?id=${i.product.id}" class="cart-item-name">${name}</a>
           <div class="cart-item-price">${formatCurrency(i.product.price)}</div>
-          <button class="cart-item-remove" data-id="${i.productId}" aria-label="Remove ${i.product.name} from cart">✕ Remove</button>
+          <button class="cart-item-remove" data-id="${i.productId}" aria-label="Remove ${name} from cart">✕ Remove</button>
         </div>
       </div>
       <div>
-        <div class="cart-qty" role="group" aria-label="Quantity for ${i.product.name}">
+        <div class="cart-qty" role="group" aria-label="Quantity for ${name}">
           <button class="cart-qty-btn" data-action="dec" data-id="${i.productId}" ${i.quantity <= 1 ? "disabled" : ""} aria-label="Decrease quantity">−</button>
           <span class="cart-qty-val" aria-live="polite">${i.quantity}</span>
           <button class="cart-qty-btn" data-action="inc" data-id="${i.productId}" ${i.quantity >= i.product.stock ? "disabled" : ""} aria-label="Increase quantity">+</button>
@@ -113,4 +117,34 @@ function renderCartItem(i) {
   `;
 }
 
-document.addEventListener("DOMContentLoaded", renderCart);
+function escapeCartHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
+}
+
+async function initializeCart() {
+  await window.ShopCraftAPI?.restoreSession();
+  if (window.ShopCraftAPI?.accessTokenReady) {
+    try {
+      const saved = await window.ShopCraftAPI.cart();
+      localStorage.setItem("sc_cart", JSON.stringify((saved.items || []).map(item => ({ productId: item.productId, quantity: item.quantity }))));
+      updateCartBadge();
+    } catch { /* The local cart remains available during a temporary API outage. */ }
+  }
+  const liveProducts = new Map();
+  await Promise.all(getCart().map(async item => {
+    try {
+      const result = await window.ShopCraftAPI.product(item.productId);
+      if (result.product) liveProducts.set(item.productId, normalizeShopCraftProduct(result.product));
+    } catch (error) {
+      if (error.status === 404) liveProducts.set(item.productId, unavailableCartProduct(item.productId));
+    }
+  }));
+  window.ShopCraftLiveProducts = liveProducts;
+  renderCart();
+}
+
+function unavailableCartProduct(id) {
+  return { id, name: "This product is no longer available", price: 0, stock: 0, imageUrl: "", category: "", rating: 0, reviewCount: 0 };
+}
+
+document.addEventListener("DOMContentLoaded", initializeCart);
