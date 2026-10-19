@@ -16,6 +16,7 @@ import maintenanceRoutes from "./routes/maintenance.js";
 import { getAppOrigin } from "./config.js";
 
 const app = express();
+app.set('trust proxy', 1);
 const port = Number(process.env.API_PORT || process.env.PORT || 3000);
 const origin = getAppOrigin();
 const apiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 300, standardHeaders: "draft-7", legacyHeaders: false });
