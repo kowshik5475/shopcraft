@@ -378,7 +378,15 @@ main { flex: 1; }
 .address-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 14px; }
 .address-grid .span-two { grid-column: span 2; }
 .profile-edit { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--border); }
-.account-layout { display: grid; grid-template-columns: minmax(260px, .75fr) minmax(0, 1.4fr); gap: 32px; align-items: start; }
+.account-layout {
+  width: 100%;
+  max-width: 1100px;
+  margin-inline: auto; /* Center the account dashboard horizontally */
+  display: grid;
+  grid-template-columns: minmax(260px, .75fr) minmax(0, 1.4fr);
+  gap: 32px;
+  align-items: start;
+}
 .panel { padding: 26px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
 .panel h2, .panel h3 { margin-bottom: 14px; }
 .form-tabs { display: flex; gap: 8px; border-bottom: 1px solid var(--border); margin-bottom: 15px; }
