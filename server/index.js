@@ -19,8 +19,20 @@ const app = express();
 app.set('trust proxy', 1);
 const port = Number(process.env.API_PORT || process.env.PORT || 3000);
 const origin = getAppOrigin();
-const apiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 300, standardHeaders: "draft-7", legacyHeaders: false });
-const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 20, standardHeaders: "draft-7", legacyHeaders: false });
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  skip: (req) => req.path === "/refresh",
+});
+
+const refreshLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 60,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+});
 
 app.disable("x-powered-by");
 app.use(helmet({ contentSecurityPolicy: false }));
