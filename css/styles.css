@@ -545,3 +545,56 @@ footer {
 .btn-secondary { background: #eef0f2; color: #20242a; border: 1px solid #d5d9de; }
 .btn-secondary:hover { background: #e1e5e9; }
 @media (max-width: 520px) { .button-row > .btn { width: 100%; } }
+
+/* ── ShopCraft Account Page Alignment ── */
+
+/* Keep the account heading aligned to the left */
+.products-header {
+  margin-bottom: 36px;
+}
+
+/* Center the account area */
+.account-layout {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%;
+  margin-inline: auto;
+  gap: 24px;
+}
+
+/* Logged-out state: centered login/register card */
+#auth-panel {
+  width: 100%;
+  max-width: 560px;
+}
+
+/* Logged-in state: centered account dashboard */
+#account-panel {
+  width: 100%;
+  max-width: 820px;
+}
+
+/* Maintain the correct layout when an element is hidden */
+#auth-panel[hidden],
+#account-panel[hidden] {
+  display: none !important;
+}
+
+/* Responsive spacing */
+@media (max-width: 600px) {
+  .account-layout {
+    padding-inline: 0;
+  }
+
+  #auth-panel,
+  #account-panel {
+    max-width: 100%;
+    padding: 18px;
+  }
+
+  .products-header {
+    margin-bottom: 24px;
+  }
+}
+
