@@ -32,7 +32,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
       if (order.paymentStatus === "SUCCEEDED") {
         title.textContent = "Your order is confirmed.";
-        text.textContent = "Your payment was verified by Stripe. We’ll update your order history when shipment details are added.";
+        text.textContent = "Your simulated payment was recorded successfully. No real money was charged. We’ll update your order history when shipment details are added.";
         details.innerHTML = `<div class="order-card"><strong>${escapeHtml(order.orderNumber)}</strong><p>${order.items.length} line items · Total $${(order.totalCents / 100).toFixed(2)}</p><span class="tag">Confirmed</span></div>`;
         try {
           const savedCart = await window.ShopCraftAPI.cart();
@@ -51,13 +51,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
       if (order.paymentStatus === "FAILED") {
         title.textContent = "Payment needs another attempt.";
-        text.textContent = "The payment provider did not confirm this payment. Your order is not marked as paid.";
+        text.textContent = "The simulated payment failed. No money was charged and the order was not confirmed.";
         details.innerHTML = `<div class="order-card"><strong>${escapeHtml(order.orderNumber)}</strong><p>Payment status: failed. Retry from checkout or cancel the pending order in order history.</p><a class="btn btn-primary" href="checkout.html">Return to checkout</a></div>`;
         return;
       }
-      status.textContent = "Payment is submitted; waiting for verified webhook confirmation.";
+      status.textContent = "Waiting for the simulated payment result.";
       title.textContent = "We’re confirming your payment.";
-      text.textContent = `Order ${order.orderNumber} is not marked paid until Stripe’s signed webhook reaches ShopCraft.`;
+      text.textContent = `Order ${order.orderNumber} is not confirmed until the simulated payment outcome is recorded by ShopCraft.`;
     } catch (error) {
       status.textContent = error.message;
       return;

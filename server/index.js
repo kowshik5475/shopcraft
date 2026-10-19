@@ -11,7 +11,7 @@ import { databaseEnabled, disconnectDatabase, prisma } from "./db.js";
 import authRoutes from "./routes/auth.js";
 import productRoutes, { categoryRouter } from "./routes/products.js";
 import customerRoutes from "./routes/customer.js";
-import paymentRoutes, { stripeWebhook } from "./routes/payments.js";
+import paymentRoutes from "./routes/payments.js";
 import maintenanceRoutes from "./routes/maintenance.js";
 import { getAppOrigin } from "./config.js";
 
@@ -29,7 +29,6 @@ app.use((req, res, next) => {
   res.setHeader("X-Request-Id", req.requestId);
   next();
 });
-app.post("/api/payments/webhook", express.raw({ type: "application/json" }), stripeWebhook);
 app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
 app.use("/api", apiLimiter);
@@ -46,7 +45,8 @@ app.get("/api/config", (_req, res) => {
   res.setHeader("Cache-Control", "public, max-age=300");
   res.json({
     databaseConfigured: databaseEnabled,
-    stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY || "",
+    paymentMode: "simulated",
+    realPaymentsEnabled: false,
   });
 });
 

@@ -197,7 +197,7 @@ model Payment {
   id                      String        @id @default(cuid())
   orderId                 String        @unique
   order                   Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  provider                String        @default("stripe")
+  provider                String        @default("simulated")
   providerPaymentIntentId String?       @unique
   status                  PaymentStatus @default(REQUIRES_PAYMENT)
   amountCents             Int

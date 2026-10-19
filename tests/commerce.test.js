@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { calculateOrderAmounts, mergeCartQuantity, paymentIntentMatchesOrder } from "../server/commerce.js";
+import { calculateOrderAmounts, mergeCartQuantity } from "../server/commerce.js";
 import { checkoutSchema, parse, registerSchema } from "../server/validation.js";
 
 test("guest cart merge keeps the larger quantity and respects available stock", () => {
@@ -24,16 +24,7 @@ test("checkout totals are integer cents with complimentary threshold shipping", 
   assert.equal(calculateOrderAmounts([{ priceCents: 3800, quantity: 1 }]).totalCents, 5000);
 });
 
-test("payment fulfillment requires the Stripe amount and currency to match the order", () => {
-  const order = { id: "order-1", totalCents: 5000, currency: "usd" };
-  const payment = { providerPaymentIntentId: "pi_1", amountCents: 5000, currency: "usd" };
-  const intent = { id: "pi_1", amount: 5000, amount_received: 5000, currency: "usd" };
 
-  assert.equal(paymentIntentMatchesOrder(intent, payment, order), true);
-  assert.equal(paymentIntentMatchesOrder({ ...intent, amount_received: 4900 }, payment, order), false);
-  assert.equal(paymentIntentMatchesOrder({ ...intent, currency: "eur" }, payment, order), false);
-  assert.equal(paymentIntentMatchesOrder({ ...intent, id: "pi_other" }, payment, order), false);
-});
 
 test("checkout validates addresses and rejects invalid quantities", () => {
   const valid = {

@@ -18,18 +18,3 @@ export function calculateOrderAmounts(items, shippingThresholdCents = 15000, shi
     totalCents: subtotalCents + shippingCents + taxCents - discountCents,
   };
 }
-
-export function paymentIntentMatchesOrder(intent, payment, order) {
-  const expectedCurrency = String(order.currency || payment.currency || "").toLowerCase();
-  return (
-    typeof intent?.id === "string" &&
-    (!payment.providerPaymentIntentId || payment.providerPaymentIntentId === intent.id) &&
-    Number.isInteger(intent.amount) &&
-    intent.amount === order.totalCents &&
-    intent.amount === payment.amountCents &&
-    Number.isInteger(intent.amount_received) &&
-    intent.amount_received === order.totalCents &&
-    String(intent.currency || "").toLowerCase() === expectedCurrency &&
-    String(payment.currency || "").toLowerCase() === expectedCurrency
-  );
-}

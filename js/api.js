@@ -148,6 +148,7 @@ window.ShopCraftAPI = {
   cancelOrder: id => request(`/api/orders/${encodeURIComponent(id)}/cancel`, { method: "POST" }),
   createPayment: body => request("/api/payments/create", { method: "POST", body: JSON.stringify(body) }),
   verifyPayment: orderId => request("/api/payments/verify", { method: "POST", body: JSON.stringify({ orderId }) }),
+  simulatePayment: (orderId, outcome) => request("/api/payments/simulate", { method: "POST", body: JSON.stringify({ orderId, outcome }) }),
 };
 
 window.ShopCraftAPI.restoreSession();

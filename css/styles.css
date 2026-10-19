@@ -514,3 +514,9 @@ footer {
   .address-grid .span-two { grid-column: span 1; }
   .detail-actions { flex-direction: column; }
 }
+
+/* Simulated checkout outcome controls */
+.button-row { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1rem; }
+.btn-secondary { background: #eef0f2; color: #20242a; border: 1px solid #d5d9de; }
+.btn-secondary:hover { background: #e1e5e9; }
+@media (max-width: 520px) { .button-row > .btn { width: 100%; } }

@@ -9,7 +9,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/styles.css" />
-  <script src="https://js.stripe.com/v3/"></script>
 </head>
 <body>
   <nav class="navbar" aria-label="Checkout navigation"><div class="container">
@@ -17,7 +16,7 @@
     <div class="nav-actions"><a href="account.html" class="utility-link">Account</a><a href="cart.html" class="utility-link">Back to cart</a></div>
   </div></nav>
   <main class="section"><div class="container">
-    <div class="products-header"><div><h1>Checkout</h1><p class="text-muted">Your payment details are securely handled by Stripe.</p></div></div>
+    <div class="products-header"><div><h1>Checkout</h1><p class="text-muted">Student project checkout with simulated payments only. No money is charged.</p></div></div>
     <div class="checkout-layout">
       <form class="panel" id="checkout-form">
         <div id="checkout-message" class="form-message" role="status" aria-live="polite"></div>
@@ -34,13 +33,12 @@
           <label class="form-label">Country code<input name="country" value="US" required minlength="2" maxlength="2" /></label>
         </div>
         <div id="payment-config-note" class="config-note" hidden></div>
-        <button class="btn btn-primary btn-lg" id="prepare-payment" type="submit">Continue to secure payment</button>
-        <section class="payment-box is-hidden" id="payment-box" aria-label="Payment form">
-          <h2>Payment</h2>
-          <div id="payment-element"></div>
+        <button class="btn btn-primary btn-lg" id="prepare-payment" type="submit">Continue to simulated payment</button>
+        <section class="payment-box is-hidden" id="payment-box" aria-label="Simulated payment">
+          <h2>Simulated payment</h2>
+          <p class="config-note">This is a student-project simulation. No payment gateway is connected and no real money will be charged.</p>
           <div class="form-message" id="payment-message" role="status" aria-live="polite"></div>
-          <button class="btn btn-primary btn-lg" type="button" id="pay-now">Pay securely</button>
-          <p class="cart-summary-note">Test/sandbox payment. Card data is sent directly to Stripe and never stored by ShopCraft.</p>
+          <div class="button-row"><button class="btn btn-primary btn-lg" type="button" id="pay-success">Simulate successful payment</button><button class="btn btn-secondary btn-lg" type="button" id="pay-failure">Simulate failed payment</button></div>
         </section>
       </form>
       <aside class="panel checkout-summary-card">
@@ -50,7 +48,7 @@
         <div class="checkout-summary-line"><span>Shipping</span><strong id="checkout-shipping">—</strong></div>
         <div class="checkout-summary-line"><span>Tax</span><strong>Not calculated</strong></div>
         <div class="checkout-summary-line total"><span>Estimated total</span><strong id="checkout-total">$0.00</strong></div>
-        <p class="cart-summary-note">The backend recalculates all prices and checks inventory before it creates the payment.</p>
+        <p class="cart-summary-note">The backend recalculates prices and reserves stock. Payment outcomes are simulated and recorded in PostgreSQL.</p>
       </aside>
     </div>
   </div></main>

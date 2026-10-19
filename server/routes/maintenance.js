@@ -1,10 +1,8 @@
 import { Router } from "express";
 import crypto from "node:crypto";
-import Stripe from "stripe";
 import { prisma, databaseEnabled } from "../db.js";
 
 const router = Router();
-const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
 
 function authorized(req) {
   const expected = process.env.SHOPCRAFT_CRON_SECRET || "";
@@ -28,17 +26,6 @@ router.post("/expire-orders", async (req, res, next) => {
     });
     let releasedOrders = 0;
     for (const order of pending) {
-      const intentId = order.payment?.providerPaymentIntentId;
-      if (intentId) {
-        if (!stripe) continue;
-        try {
-          const intent = await stripe.paymentIntents.retrieve(intentId);
-          if (intent.status === "succeeded" || intent.status === "processing") continue;
-          if (intent.status !== "canceled") await stripe.paymentIntents.cancel(intentId);
-        } catch {
-          continue;
-        }
-      }
       const released = await prisma.$transaction(async tx => {
         const changed = await tx.order.updateMany({
           where: { id: order.id, status: "PENDING_PAYMENT", stockReservedUntil: { lte: now } },

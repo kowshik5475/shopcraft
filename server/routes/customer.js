@@ -1,11 +1,9 @@
 import { Router } from "express";
-import Stripe from "stripe";
 import { prisma, databaseEnabled } from "../db.js";
 import { requireAuth } from "../auth.js";
 import { addressSchema, guestCartSchema, parse } from "../validation.js";
 
 const router = Router();
-const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
 const productInclude = { product: { include: { category: true } } };
 
 async function ensureCart(userId) {
@@ -261,14 +259,6 @@ router.post("/orders/:id/cancel", requireAuth, async (req, res, next) => {
     if (!order) return res.status(404).json({ error: "Order not found." });
     if (order.status !== "PENDING_PAYMENT") return res.status(409).json({ error: "This order can no longer be cancelled online." });
     if (order.paymentStatus === "SUCCEEDED") return res.status(409).json({ error: "Paid orders require support to arrange a cancellation or refund." });
-    if (order.payment?.providerPaymentIntentId && !stripe) return res.status(503).json({ error: "Payment cancellation is unavailable. Contact store support before retrying." });
-    if (order.payment?.providerPaymentIntentId && stripe) {
-      const intent = await stripe.paymentIntents.retrieve(order.payment.providerPaymentIntentId);
-      if (intent.status !== "canceled" && intent.status !== "succeeded") {
-        await stripe.paymentIntents.cancel(intent.id);
-      }
-      if (intent.status === "succeeded") return res.status(409).json({ error: "Payment completed; the order cannot be cancelled online." });
-    }
     const cancelled = await prisma.$transaction(async tx => {
       const changed = await tx.order.updateMany({
         where: { id: order.id, status: "PENDING_PAYMENT" },

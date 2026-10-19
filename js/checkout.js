@@ -1,6 +1,3 @@
-let checkoutStripe;
-let checkoutElements;
-let paymentElement;
 let activeOrder;
 let currentLines = [];
 
@@ -66,15 +63,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const config = await window.ShopCraftAPI.publicConfig().catch(() => null);
   if (!config?.databaseConfigured) {
-    showConfig("Checkout is unavailable until PostgreSQL is configured, migrated, and seeded. No simulated orders are available. Configure the live database and payment gateway before checkout.");
-    document.getElementById("prepare-payment").disabled = true;
-  } else if (!config.stripePublishableKey || typeof window.Stripe !== "function") {
-    showConfig("Stripe sandbox checkout needs STRIPE_PUBLISHABLE_KEY configured on the backend and Stripe.js available in this browser.");
+    showConfig("Checkout requires the live PostgreSQL database. No local or demo orders are available.");
     document.getElementById("prepare-payment").disabled = true;
   }
 
   document.getElementById("checkout-form").addEventListener("submit", beginCheckout);
-  document.getElementById("pay-now").addEventListener("click", submitPayment);
+  document.getElementById("pay-success").addEventListener("click", () => submitPayment("success"));
+  document.getElementById("pay-failure").addEventListener("click", () => submitPayment("failure"));
 });
 
 function renderSummary(items) {
@@ -138,16 +133,10 @@ async function beginCheckout(event) {
   try {
     const created = await window.ShopCraftAPI.createPayment({ items, shippingAddress, idempotencyKey });
     activeOrder = created;
-    const config = await window.ShopCraftAPI.publicConfig();
-    if (!config.stripePublishableKey) throw new Error("The order is awaiting a configured Stripe publishable key. Please do not submit payment again; contact the store administrator.");
-    checkoutStripe = window.Stripe(config.stripePublishableKey);
-    checkoutElements = checkoutStripe.elements({ clientSecret: created.clientSecret, appearance: { theme: "stripe", variables: { colorPrimary: "#2c2c2c", borderRadius: "6px", fontFamily: "Inter, system-ui, sans-serif" } } });
-    paymentElement = checkoutElements.create("payment");
-    paymentElement.mount("#payment-element");
     document.getElementById("payment-box").classList.remove("is-hidden");
     submit.hidden = true;
-    message.textContent = `Order ${created.orderNumber} is ready. Complete the secure sandbox payment below.`;
-    document.getElementById("payment-message").textContent = "";
+    message.textContent = `Order ${created.orderNumber} is ready for simulated payment. No money will be charged.`;
+    document.getElementById("payment-message").textContent = "Choose a test outcome below. This is not a real payment.";
   } catch (error) {
     message.textContent = error.message;
     if (error.restartCheckout) {
@@ -160,30 +149,33 @@ async function beginCheckout(event) {
   }
 }
 
-async function submitPayment() {
-  if (!checkoutStripe || !checkoutElements || !activeOrder) return;
-  const button = document.getElementById("pay-now");
+async function submitPayment(outcome) {
+  if (!activeOrder) return;
+  const successButton = document.getElementById("pay-success");
+  const failureButton = document.getElementById("pay-failure");
   const message = document.getElementById("payment-message");
-  button.disabled = true;
-  message.textContent = "Confirming your payment…";
-  const returnUrl = `${location.origin}/order-confirmation.html?orderId=${encodeURIComponent(activeOrder.orderId)}`;
-  const result = await checkoutStripe.confirmPayment({
-    elements: checkoutElements,
-    confirmParams: { return_url: returnUrl },
-    redirect: "if_required",
-  });
-  button.disabled = false;
-  if (result.error) {
-    message.textContent = result.error.message || "Payment was not completed. Check your payment details and try again.";
-    return;
+  successButton.disabled = true;
+  failureButton.disabled = true;
+  message.textContent = "Recording simulated payment outcome…";
+  try {
+    const result = await window.ShopCraftAPI.simulatePayment(activeOrder.orderId, outcome);
+    message.textContent = result.notice || "Simulated payment recorded. No money was charged.";
+    if (result.status === "SUCCEEDED") {
+      const returnUrl = `${location.origin}/order-confirmation.html?orderId=${encodeURIComponent(activeOrder.orderId)}`;
+      location.href = returnUrl;
+      return;
+    }
+    sessionStorage.removeItem("sc_checkout_key");
+    sessionStorage.removeItem("sc_checkout_signature");
+    document.getElementById("checkout-message").textContent = "Simulated payment failed. No money was charged, and reserved stock was released. Return to your cart to try again.";
+    document.getElementById("payment-box").classList.add("is-hidden");
+    document.getElementById("prepare-payment").hidden = false;
+    document.getElementById("prepare-payment").disabled = false;
+  } catch (error) {
+    message.textContent = error.message || "Could not record the simulated payment.";
+    successButton.disabled = false;
+    failureButton.disabled = false;
   }
-  if (["succeeded", "processing"].includes(result.paymentIntent?.status)) {
-    message.textContent = "Payment sent for verification. Waiting for the order confirmation…";
-    try { await window.ShopCraftAPI.verifyPayment(activeOrder.orderId); } catch { /* Stripe webhook remains the source of truth. */ }
-    location.href = returnUrl;
-    return;
-  }
-  message.textContent = "Payment needs another attempt. Check the payment details and try again.";
 }
 
 function showConfig(message) {

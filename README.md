@@ -1,6 +1,6 @@
 # ShopCraft — customer-side e-commerce
 
-ShopCraft keeps the original responsive vanilla HTML/CSS/JavaScript storefront and adds a Node.js/Express API, PostgreSQL persistence through Prisma, customer accounts, saved items, order history, and a Stripe PaymentIntent checkout. The original numeric product IDs and a temporary guest cart that syncs on sign-in are preserved. Runtime demo mode is disabled.
+ShopCraft keeps the original responsive vanilla HTML/CSS/JavaScript storefront and adds a Node.js/Express API, PostgreSQL persistence through Prisma, customer accounts, saved items, order history, and a simulated payment checkout. The original numeric product IDs and a temporary guest cart that syncs on sign-in are preserved. Runtime demo mode is disabled.
 
 ## Features
 
@@ -8,13 +8,13 @@ ShopCraft keeps the original responsive vanilla HTML/CSS/JavaScript storefront a
 - Customer account: registration/login, 15-minute access JWT, single-use rotating 30-day refresh JWT in an `HttpOnly` cookie, profile name, saved delivery addresses.
 - Guest and signed-in cart/wishlist, with a max-quantity merge when a guest signs in.
 - Order history and owned-order detail/cancel routes. Shipment tracking is displayed only when shipment data exists.
-- Server-authoritative checkout prices and stock reservation, integer cents, idempotency keys, Stripe PaymentElement/PaymentIntent, webhook-driven payment confirmation, and signed webhook event deduplication.
+- Server-authoritative checkout prices and stock reservation, integer cents, idempotency keys, explicitly labelled simulated payment outcomes persisted in PostgreSQL; no payment gateway or real money is involved.
 - PostgreSQL constraints/indexes, full-text GIN index, request IDs, Helmet, exact-origin CORS, rate limits, and a health endpoint.
 - Database-only product catalog. The server refuses to start without a configured and reachable PostgreSQL database; the browser never falls back to bundled product data.
 
 ## Start locally
 
-Requirements: Node.js 20+, PostgreSQL, and a Stripe test-mode account for payments.
+Requirements: Node.js 20+ and PostgreSQL. Payments are simulated for this student project; no payment gateway is used.
 
 ```sh
 cp .env.example .env
@@ -31,27 +31,19 @@ Open `http://localhost:3000`. The server refuses to start unless both independen
 
 The initial seed records live in `prisma/seed-products.js`; they are loaded into PostgreSQL only by the explicit seed command and are never served to browsers or used as a runtime fallback. These are starter catalog records, not a verified real-world inventory. Replace their names, prices, image URLs, and stock with your actual catalog before accepting customer orders. Re-running the seed updates product copy/prices but does not reset stock or review aggregates.
 
-## Supported checkout market
+## Checkout and simulated payments
 
-The current checkout is configured for **USD prices and Stripe USD PaymentIntents**, with United States as the default delivery country, flat USD shipping, and no tax calculation. The address format accepts ISO-style two-letter country codes, but country-specific shipping rates, tax, currency conversion, and international fulfillment are not implemented or verified. Do not describe this deployment as an international checkout. To launch in another market, implement and test country-specific address validation, shipping/tax pricing, currency-aware display and gateway amounts, and any local payment method before changing the displayed currency.
+The checkout uses **simulated payments for this student project**. No Stripe account, payment gateway, card details, webhook, or payment credentials are required, and no real money is charged. After the backend creates an order and reserves stock, the customer can explicitly choose **Simulate successful payment** or **Simulate failed payment**. The backend records the selected educational test outcome in PostgreSQL. A failed simulation cancels the pending order and releases reserved inventory. Do not present this as a real payment system or use it for commercial orders.
 
-## Configure payment sandbox
-
-Set `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, and `STRIPE_WEBHOOK_SECRET` as backend environment variables. Point a Stripe test-mode webhook to:
-
-```text
-https://YOUR_API_HOST/api/payments/webhook
-```
-
-Subscribe to `payment_intent.succeeded`, `payment_intent.payment_failed`, `payment_intent.canceled`, and `charge.refunded`. The browser's return page only reports status; the signed webhook is the source of truth for fulfillment. Inventory is reserved for 30 minutes and released on cancellation/setup failure. Configure `SHOPCRAFT_CRON_SECRET` and schedule a `POST /api/maintenance/expire-orders` request with `Authorization: Bearer <secret>` every few minutes to release abandoned reservations; do not put that secret in browser code. No tax calculation, discount/coupon engine, refund administration, or carrier integration is included; tax is currently zero, and shipment tracking is manual data.
+The current sample catalog and checkout use USD display/pricing, United States as the default delivery country, flat shipping, and no tax calculation. Country-specific shipping rates, tax, currency conversion, and international fulfillment are not implemented. Configure `SHOPCRAFT_CRON_SECRET` and schedule a `POST /api/maintenance/expire-orders` request with `Authorization: Bearer <secret>` every few minutes to release abandoned reservations; never put that secret in browser code. No discount/coupon engine, refund administration, or carrier integration is included; tax is currently zero, and shipment tracking is manual data.
 
 ## Deploy frontend and API
 
 - The Express server can serve the storefront and API together. Set `APP_ORIGIN` to that exact browser origin.
 - For a static Vercel frontend plus a separate API host, set `window.SHOPCRAFT_API_BASE` in `js/config.js` to the HTTPS API origin. Set backend `APP_ORIGIN` to the exact HTTPS frontend origin (no path or trailing slash). For a cross-site frontend/API deployment, use HTTPS and set `COOKIE_SAME_SITE=none`; `COOKIE_SECURE=true` is required for `SameSite=None`, and production always forces secure cookies. SameSite defaults to `lax`. Keep the API CORS origin exact.
 - Add all secrets using the host's environment/secrets manager; never commit `.env`.
-- Configure PostgreSQL, then run `npm run db:generate`, `npm run db:deploy`, and `npm run db:seed` against that environment. Set the Stripe webhook secret for the deployed webhook endpoint.
-- `GET /api/health` reports whether PostgreSQL is reachable (it does not claim Stripe, migrations, or checkout are healthy). `GET /api/config` exposes only the public Stripe publishable key and a database-configured flag.
+- Configure PostgreSQL, then run `npm run db:generate`, `npm run db:deploy`, and `npm run db:seed` against that environment. No payment gateway credentials or webhook setup is needed.
+- `GET /api/health` reports whether PostgreSQL is reachable (it does not claim migrations or checkout are healthy). `GET /api/config` exposes the database-configured flag and explicitly reports simulated payment mode.
 
 The Vercel config supports clean URLs for the storefront pages. When hosting its API elsewhere, the project remains a static frontend and the Express server runs as a separate Node service.
 
@@ -62,7 +54,7 @@ The Vercel config supports clean URLs for the storefront pages. When hosting its
 | Public catalog | `GET /api/products`, `/api/products/:id`, `/api/products/:id/related`, `/api/products/:id/reviews`, `/api/categories` |
 | Auth | `POST /api/auth/register`, `/login`, `/refresh`, `/logout`; `GET /api/auth/me` |
 | Customer data | `/api/cart`, `/api/wishlist`, `/api/profile`, `/api/addresses`, `/api/orders` |
-| Checkout | `POST /api/payments/create`, `/api/payments/verify`; `POST /api/payments/webhook` |
+| Checkout | `POST /api/payments/create`, `/api/payments/simulate`, `/api/payments/verify` |
 | Maintenance | `POST /api/maintenance/expire-orders` (requires the server-side cron bearer secret) |
 | Health/config | `GET /api/health`, `GET /api/config` |
 
@@ -79,9 +71,7 @@ All order, address, cart, and wishlist data is scoped to the authenticated user.
 
 ## Verification boundary
 
-The package includes a database migration and Stripe integration code, but those live services need the operator's own `DATABASE_URL` and Stripe test credentials. The app refuses to start without a configured and reachable PostgreSQL database. If Stripe is not configured, checkout cannot complete; the application does not simulate orders or payments.
-
-The hardening tests cover JWT/config validation, refresh-token compare-and-swap behavior under concurrent requests, checkout calculations, and Stripe PaymentIntent amount/currency matching. They are unit tests and do not replace API integration tests against an isolated PostgreSQL database or Stripe sandbox webhook/payment-flow tests.
+The application requires a configured, reachable PostgreSQL database and does not use runtime demo data. Payment outcomes are simulated for educational use only and persisted to PostgreSQL; no real money is charged. Automated unit tests do not replace API integration tests against an isolated PostgreSQL database.
 
 ## Original project references
 

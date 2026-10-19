@@ -67,7 +67,7 @@ CREATE TABLE "OrderItem" (
   CONSTRAINT "OrderItem_pkey" PRIMARY KEY ("id")
 );
 CREATE TABLE "Payment" (
-  "id" TEXT NOT NULL, "orderId" TEXT NOT NULL, "provider" TEXT NOT NULL DEFAULT 'stripe',
+  "id" TEXT NOT NULL, "orderId" TEXT NOT NULL, "provider" TEXT NOT NULL DEFAULT 'simulated',
   "providerPaymentIntentId" TEXT, "status" "PaymentStatus" NOT NULL DEFAULT 'REQUIRES_PAYMENT',
   "amountCents" INTEGER NOT NULL, "currency" TEXT NOT NULL DEFAULT 'usd', "failureMessage" TEXT,
   "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL,
