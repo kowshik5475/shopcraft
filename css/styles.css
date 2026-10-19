@@ -378,14 +378,31 @@ main { flex: 1; }
 .address-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 14px; }
 .address-grid .span-two { grid-column: span 2; }
 .profile-edit { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--border); }
+/* Center the account authentication panel */
 .account-layout {
   width: 100%;
-  max-width: 1100px;
-  margin-inline: auto; /* Center the account dashboard horizontally */
-  display: grid;
-  grid-template-columns: minmax(260px, .75fr) minmax(0, 1.4fr);
-  gap: 32px;
-  align-items: start;
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+/* Give the login/register card a balanced width */
+.account-layout > .panel {
+  width: 100%;
+  max-width: 560px;
+}
+
+/* Keep the layout responsive */
+@media (max-width: 600px) {
+  .account-layout {
+    padding-inline: 12px;
+  }
+
+  .account-layout > .panel {
+    max-width: 100%;
+  }
 }
 .panel { padding: 26px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
 .panel h2, .panel h3 { margin-bottom: 14px; }
