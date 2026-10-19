@@ -77,26 +77,92 @@ router.post("/cart/merge", requireAuth, async (req, res, next) => {
   try {
     const { items } = parse(guestCartSchema, req.body);
     const cart = await ensureCart(req.user.id);
-    const products = await prisma.product.findMany({ where: { id: { in: items.map(item => item.productId) }, active: true } });
-    const productMap = new Map(products.map(product => [product.id, product]));
+
+    const productIds = [...new Set(items.map((item) => item.productId))];
+
+    // Fetch products and existing cart items in parallel.
+    const [products, existingItems] = await Promise.all([
+      prisma.product.findMany({
+        where: {
+          id: { in: productIds },
+          active: true,
+        },
+      }),
+      prisma.cartItem.findMany({
+        where: {
+          cartId: cart.id,
+          productId: { in: productIds },
+        },
+      }),
+    ]);
+
+    const productMap = new Map(
+      products.map((product) => [product.id, product])
+    );
+
+    const existingMap = new Map(
+      existingItems.map((item) => [item.productId, item])
+    );
+
     let syncedCount = 0;
     const operations = [];
+
     for (const input of items) {
       const product = productMap.get(input.productId);
-      if (!product || product.stock < 1) continue;
-      const existing = await prisma.cartItem.findUnique({ where: { cartId_productId: { cartId: cart.id, productId: input.productId } } });
-      // max() preserves the larger of guest/account quantities instead of double-counting a shared cart.
-      const quantity = Math.min(product.stock, Math.max(existing?.quantity || 0, input.quantity));
+
+      if (!product || product.stock < 1) {
+        continue;
+      }
+
+      const existing = existingMap.get(input.productId);
+
+      // Preserve the larger quantity without double-counting.
+      const quantity = Math.min(
+        product.stock,
+        Math.max(existing?.quantity || 0, input.quantity)
+      );
+
       syncedCount += quantity;
-      operations.push(prisma.cartItem.upsert({
-        where: { cartId_productId: { cartId: cart.id, productId: input.productId } },
-        create: { cartId: cart.id, productId: input.productId, quantity },
-        update: { quantity },
-      }));
+
+      operations.push(
+        prisma.cartItem.upsert({
+          where: {
+            cartId_productId: {
+              cartId: cart.id,
+              productId: input.productId,
+            },
+          },
+          create: {
+            cartId: cart.id,
+            productId: input.productId,
+            quantity,
+          },
+          update: {
+            quantity,
+          },
+        })
+      );
     }
-    if (operations.length) await prisma.$transaction(operations);
-    const saved = await prisma.cart.findUnique({ where: { id: cart.id }, include: { items: { include: productInclude } } });
-    return res.json({ items: saved.items, syncedCount, skippedCount: items.length - operations.length });
+
+    // Execute cart updates together in one transaction.
+    if (operations.length > 0) {
+      await prisma.$transaction(operations);
+    }
+
+    const saved = await prisma.cart.findUnique({
+      where: { id: cart.id },
+      include: {
+        items: {
+          include: productInclude,
+        },
+      },
+    });
+
+    return res.json({
+      items: saved.items,
+      syncedCount,
+      skippedCount: items.length - operations.length,
+    });
   } catch (error) {
     return next(error);
   }
