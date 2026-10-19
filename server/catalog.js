@@ -1,20 +1,3 @@
-import { readFile } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
-import path from "node:path";
-import vm from "node:vm";
-
-const sourcePath = fileURLToPath(new URL("../data/products.js", import.meta.url));
-let cached;
-
-export async function getLocalCatalog() {
-  if (cached) return cached;
-  const source = await readFile(sourcePath, "utf8");
-  const sandbox = { module: { exports: {} } };
-  vm.runInNewContext(`${source}\nmodule.exports = { PRODUCTS, CATEGORIES };`, sandbox, { timeout: 1000 });
-  cached = sandbox.module.exports;
-  return cached;
-}
-
 export function publicProduct(product) {
   return {
     id: product.id,

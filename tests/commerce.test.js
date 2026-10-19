@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { calculateOrderAmounts, mergeCartQuantity, paymentIntentMatchesOrder } from "../server/commerce.js";
-import { getLocalCatalog } from "../server/catalog.js";
 import { checkoutSchema, parse, registerSchema } from "../server/validation.js";
 
 test("guest cart merge keeps the larger quantity and respects available stock", () => {
@@ -58,11 +57,3 @@ test("registration enforces the documented password strength rules", () => {
   assert.throws(() => parse(registerSchema, { email: "test@example.com", name: "Test User", password: "weakpass" }));
 });
 
-test("the local demo catalog still exposes the original 20 products", async () => {
-  const { PRODUCTS, CATEGORIES } = await getLocalCatalog();
-  assert.equal(PRODUCTS.length, 20);
-  assert.equal(CATEGORIES.length, 8);
-  assert.equal(PRODUCTS.find(product => product.id === 1).name, "Wireless Noise-Cancelling Headphones");
-  assert.equal(new Set(PRODUCTS.map(product => product.id)).size, PRODUCTS.length);
-  assert.ok(PRODUCTS.every(product => CATEGORIES.includes(product.category)));
-});

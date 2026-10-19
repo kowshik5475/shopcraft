@@ -5,7 +5,7 @@ import vm from "node:vm";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
-const productsFile = fileURLToPath(new URL("../data/products.js", import.meta.url));
+const productsFile = fileURLToPath(new URL("./seed-products.js", import.meta.url));
 
 async function loadLegacyProducts() {
   const source = await readFile(productsFile, "utf8");

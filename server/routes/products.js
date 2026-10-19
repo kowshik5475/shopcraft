@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { Prisma } from "@prisma/client";
-import { prisma, databaseEnabled } from "../db.js";
-import { getLocalCatalog, publicProduct, toCents } from "../catalog.js";
+import { prisma } from "../db.js";
+import { publicProduct, toCents } from "../catalog.js";
 import { requireAuth } from "../auth.js";
 import { parse, reviewSchema } from "../validation.js";
 
@@ -32,14 +32,8 @@ async function listCategories(_req, res, next) {
   try {
     const cached = getCached("categories");
     if (cached) return res.json(cached);
-    if (databaseEnabled) {
-      const categories = await prisma.category.findMany({ orderBy: { name: "asc" }, include: { _count: { select: { products: { where: { active: true } } } } } });
-      const result = { data: categories.map(category => ({ id: category.id, name: category.name, slug: category.slug, count: category._count.products })) };
-      setCached("categories", result, 5 * 60_000);
-      return res.json(result);
-    }
-    const { CATEGORIES, PRODUCTS } = await getLocalCatalog();
-    const result = { data: CATEGORIES.map((name, id) => ({ id: id + 1, name, slug: name.toLowerCase().replace(/[^a-z0-9]+/g, "-"), count: PRODUCTS.filter(item => item.category === name).length })) };
+    const categories = await prisma.category.findMany({ orderBy: { name: "asc" }, include: { _count: { select: { products: { where: { active: true } } } } } });
+    const result = { data: categories.map(category => ({ id: category.id, name: category.name, slug: category.slug, count: category._count.products })) };
     setCached("categories", result, 5 * 60_000);
     return res.json(result);
   } catch (error) {
@@ -67,32 +61,10 @@ router.get("/", async (req, res, next) => {
     const inStock = req.query.inStock === "true";
     const featured = req.query.featured === "true";
     const sort = String(req.query.sort || "newest");
-    const cacheKey = JSON.stringify({ search, category, page, pageSize, minPrice, maxPrice, inStock, featured, sort, databaseEnabled });
+    const cacheKey = JSON.stringify({ search, category, page, pageSize, minPrice, maxPrice, inStock, featured, sort });
     const cached = getCached(cacheKey);
     if (cached) return res.json(cached);
 
-    if (!databaseEnabled) {
-      const { PRODUCTS } = await getLocalCatalog();
-      let found = [...PRODUCTS];
-      if (search) {
-        const term = search.toLowerCase();
-        found = found.filter(p => `${p.name} ${p.description} ${p.category}`.toLowerCase().includes(term));
-      }
-      if (category) found = found.filter(p => p.category.toLowerCase() === category.toLowerCase());
-      if (minPrice !== undefined) found = found.filter(p => toCents(p.price) >= minPrice);
-      if (maxPrice !== undefined) found = found.filter(p => toCents(p.price) <= maxPrice);
-      if (inStock) found = found.filter(p => p.stock > 0);
-      if (featured) found = found.filter(p => p.featured);
-      if (sort === "price_asc") found.sort((a, b) => a.price - b.price);
-      else if (sort === "price_desc") found.sort((a, b) => b.price - a.price);
-      else if (sort === "name") found.sort((a, b) => a.name.localeCompare(b.name));
-      else if (sort === "rating") found.sort((a, b) => b.rating - a.rating);
-      else if (sort === "popularity") found.sort((a, b) => b.reviewCount - a.reviewCount);
-      else found.sort((a, b) => b.id - a.id);
-      const result = { data: found.slice((page - 1) * pageSize, page * pageSize), total: found.length, page, pageSize, source: "local-demo" };
-      setCached(cacheKey, result);
-      return res.json(result);
-    }
 
     const where = {
       active: true,
@@ -176,11 +148,6 @@ router.get("/:id/related", async (req, res, next) => {
   try {
     const id = Number.parseInt(req.params.id, 10);
     if (!Number.isInteger(id)) return res.status(400).json({ error: "Invalid product ID." });
-    if (!databaseEnabled) {
-      const { PRODUCTS } = await getLocalCatalog();
-      const current = PRODUCTS.find(product => product.id === id);
-      return res.json({ data: PRODUCTS.filter(product => product.id !== id && product.category === current?.category).slice(0, 4) });
-    }
     const current = await prisma.product.findUnique({ where: { id } });
     if (!current) return res.status(404).json({ error: "Product not found." });
     const rows = await prisma.product.findMany({ where: { active: true, categoryId: current.categoryId, id: { not: id } }, include: { category: true }, orderBy: { rating: "desc" }, take: 4 });
@@ -194,7 +161,6 @@ router.get("/:id/reviews", async (req, res, next) => {
   try {
     const id = Number.parseInt(req.params.id, 10);
     if (!Number.isInteger(id)) return res.status(400).json({ error: "Invalid product ID." });
-    if (!databaseEnabled) return res.json({ data: [], source: "local-demo" });
     const reviews = await prisma.review.findMany({ where: { productId: id }, select: { id: true, rating: true, title: true, body: true, verified: true, createdAt: true, user: { select: { name: true } } }, orderBy: { createdAt: "desc" } });
     return res.json({ data: reviews });
   } catch (error) {
@@ -225,11 +191,6 @@ router.get("/:id", async (req, res, next) => {
   try {
     const id = Number.parseInt(req.params.id, 10);
     if (!Number.isInteger(id)) return res.status(400).json({ error: "Invalid product ID." });
-    if (!databaseEnabled) {
-      const { PRODUCTS } = await getLocalCatalog();
-      const product = PRODUCTS.find(item => item.id === id);
-      return product ? res.json({ product, source: "local-demo" }) : res.status(404).json({ error: "Product not found." });
-    }
     const product = await prisma.product.findFirst({ where: { id, active: true }, include: { category: true } });
     return product ? res.json({ product: publicProduct(product) }) : res.status(404).json({ error: "Product not found." });
   } catch (error) {

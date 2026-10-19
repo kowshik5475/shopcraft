@@ -17,7 +17,7 @@ function renderCart() {
 
   // Enrich items with product data
   const enriched = items.map(i => {
-    const product = window.ShopCraftLiveProducts?.get(i.productId) || PRODUCTS.find(p => p.id === i.productId) || unavailableCartProduct(i.productId);
+    const product = window.ShopCraftLiveProducts?.get(i.productId) || unavailableCartProduct(i.productId);
     return { ...i, product };
   });
 
@@ -84,7 +84,7 @@ function renderCart() {
     } else if (incBtn) {
       const id = parseInt(incBtn.dataset.id);
       const item = getCart().find(i => i.productId === id);
-      const product = window.ShopCraftLiveProducts?.get(id) || PRODUCTS.find(p => p.id === id);
+      const product = window.ShopCraftLiveProducts?.get(id);
       if (item && product && item.quantity < product.stock) { updateQuantity(id, item.quantity + 1); renderCart(); }
     }
   });
@@ -128,17 +128,26 @@ async function initializeCart() {
       const saved = await window.ShopCraftAPI.cart();
       localStorage.setItem("sc_cart", JSON.stringify((saved.items || []).map(item => ({ productId: item.productId, quantity: item.quantity }))));
       updateCartBadge();
-    } catch { /* The local cart remains available during a temporary API outage. */ }
+    } catch (error) {
+      document.getElementById("cart-root").innerHTML = `<div class="empty-cart"><h2>Cart unavailable</h2><p class="text-muted">${escapeCartHtml(error.message)} Check the API and database connection.</p><button class="btn btn-primary" onclick="location.reload()">Retry</button></div>`;
+      return;
+    }
   }
   const liveProducts = new Map();
-  await Promise.all(getCart().map(async item => {
-    try {
-      const result = await window.ShopCraftAPI.product(item.productId);
-      if (result.product) liveProducts.set(item.productId, normalizeShopCraftProduct(result.product));
-    } catch (error) {
-      if (error.status === 404) liveProducts.set(item.productId, unavailableCartProduct(item.productId));
-    }
-  }));
+  try {
+    await Promise.all(getCart().map(async item => {
+      try {
+        const result = await window.ShopCraftAPI.product(item.productId);
+        if (result.product) liveProducts.set(item.productId, normalizeShopCraftProduct(result.product));
+      } catch (error) {
+        if (error.status === 404) liveProducts.set(item.productId, unavailableCartProduct(item.productId));
+        else throw error;
+      }
+    }));
+  } catch (error) {
+    document.getElementById("cart-root").innerHTML = `<div class="empty-cart"><h2>Cart unavailable</h2><p class="text-muted">${escapeCartHtml(error.message)} Check the API and database connection.</p><button class="btn btn-primary" onclick="location.reload()">Retry</button></div>`;
+    return;
+  }
   window.ShopCraftLiveProducts = liveProducts;
   renderCart();
 }

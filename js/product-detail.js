@@ -6,12 +6,13 @@ document.addEventListener("DOMContentLoaded", async function () {
   try {
     product = (await window.ShopCraftAPI.product(id)).product;
   } catch (error) {
-    if (error.status === 404) product = null;
-    else product = PRODUCTS.find(item => item.id === id);
+    root.innerHTML = `<div class="empty-cart"><h2>${error.status === 404 ? "Product not found" : "Store temporarily unavailable"}</h2><p class="text-muted">${error.status === 404 ? "This product is not available in the live catalog." : "Product details could not be loaded from the store API. Check the backend and database connection."}</p><a href="products.html" class="btn btn-primary">Return to catalog</a><button class="btn btn-outline" id="retry-product">Retry</button></div>`;
+    document.getElementById("retry-product")?.addEventListener("click", () => location.reload());
+    return;
   }
 
   if (!product) {
-    root.innerHTML = `<div class="empty-cart"><h2>Product not found</h2><p class="text-muted">The item you’re looking for isn’t available.</p><a href="products.html" class="btn btn-primary">Return to catalog</a></div>`;
+    root.innerHTML = `<div class="empty-cart"><h2>Product not found</h2><p class="text-muted">The item you’re looking for isn’t available in the live catalog.</p><a href="products.html" class="btn btn-primary">Return to catalog</a></div>`;
     return;
   }
 

@@ -10,24 +10,34 @@ document.addEventListener("DOMContentLoaded", async () => {
       remoteWishlist = result.items || [];
       saveWishlist(result.items.map(item => item.productId));
     } catch (error) {
-      status.textContent = error.message;
+      status.textContent = `Unable to load your saved items from the live API: ${error.message}`;
+      grid.innerHTML = `<div class="wishlist-empty" style="grid-column:1/-1"><h2>Wishlist unavailable</h2><p>Check the API and database connection, then retry.</p><button class="btn btn-primary" id="retry-wishlist">Retry</button></div>`;
+      document.getElementById("retry-wishlist")?.addEventListener("click", () => location.reload());
+      return;
     }
   }
   const liveProducts = new Map(remoteWishlist.map(item => [item.productId, normalizeShopCraftProduct(item.product)]));
-  await Promise.all(getWishlist().map(async id => {
-    if (liveProducts.has(id)) return;
-    try {
-      const result = await window.ShopCraftAPI.product(id);
-      if (result.product) liveProducts.set(id, normalizeShopCraftProduct(result.product));
-    } catch (error) {
-      if (error.status === 404) liveProducts.set(id, unavailableWishlistProduct(id));
-    }
-  }));
+  try {
+    await Promise.all(getWishlist().map(async id => {
+      if (liveProducts.has(id)) return;
+      try {
+        const result = await window.ShopCraftAPI.product(id);
+        if (result.product) liveProducts.set(id, normalizeShopCraftProduct(result.product));
+      } catch (error) {
+        if (error.status === 404) liveProducts.set(id, unavailableWishlistProduct(id));
+        else throw error;
+      }
+    }));
+  } catch (error) {
+    status.textContent = `Unable to load product details from the live API: ${error.message}`;
+    grid.innerHTML = `<div class="wishlist-empty" style="grid-column:1/-1"><h2>Wishlist unavailable</h2><p>Check the API and database connection, then retry.</p><button class="btn btn-primary" onclick="location.reload()">Retry</button></div>`;
+    return;
+  }
   window.ShopCraftLiveProducts = liveProducts;
 
   function render() {
     const saved = getWishlist();
-    const products = saved.map(id => liveProducts.get(id) || PRODUCTS.find(product => product.id === id)).filter(Boolean);
+    const products = saved.map(id => liveProducts.get(id)).filter(Boolean);
     status.textContent = window.ShopCraftAPI.accessTokenReady ? "Saved to your account." : "Saved on this device. Sign in to sync across devices.";
     if (!products.length) {
       grid.innerHTML = `<div class="wishlist-empty" style="grid-column:1/-1"><h2>Your wishlist is waiting</h2><p>Save a few pieces to compare them later.</p><a class="btn btn-primary" href="products.html">Browse the catalog</a></div>`;
@@ -42,7 +52,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         <div class="card-footer"><button class="btn btn-primary btn-sm" data-add="${product.id}" ${product.stock < 1 ? "disabled" : ""}>${product.stock < 1 ? "Out of stock" : "Add to cart"}</button><button class="btn btn-ghost btn-sm" data-remove="${product.id}">Remove</button></div>
       </article>`).join("");
     grid.querySelectorAll("[data-add]").forEach(button => button.addEventListener("click", () => {
-      const product = liveProducts.get(Number(button.dataset.add)) || PRODUCTS.find(item => item.id === Number(button.dataset.add));
+      const product = liveProducts.get(Number(button.dataset.add));
       if (!product) return;
       addToCart(product.id);
       toggleWishlist(product.id);

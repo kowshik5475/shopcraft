@@ -1,6 +1,6 @@
 # ShopCraft — customer-side e-commerce
 
-ShopCraft keeps the original responsive vanilla HTML/CSS/JavaScript storefront and adds a Node.js/Express API, PostgreSQL persistence through Prisma, customer accounts, saved items, order history, and a Stripe PaymentIntent checkout. The original numeric product IDs and local-storage guest cart are preserved.
+ShopCraft keeps the original responsive vanilla HTML/CSS/JavaScript storefront and adds a Node.js/Express API, PostgreSQL persistence through Prisma, customer accounts, saved items, order history, and a Stripe PaymentIntent checkout. The original numeric product IDs and a temporary guest cart that syncs on sign-in are preserved. Runtime demo mode is disabled.
 
 ## Features
 
@@ -10,7 +10,7 @@ ShopCraft keeps the original responsive vanilla HTML/CSS/JavaScript storefront a
 - Order history and owned-order detail/cancel routes. Shipment tracking is displayed only when shipment data exists.
 - Server-authoritative checkout prices and stock reservation, integer cents, idempotency keys, Stripe PaymentElement/PaymentIntent, webhook-driven payment confirmation, and signed webhook event deduplication.
 - PostgreSQL constraints/indexes, full-text GIN index, request IDs, Helmet, exact-origin CORS, rate limits, and a health endpoint.
-- A local catalog fallback for browsing when no database is configured. Account/checkout actions stay disabled rather than pretending to work.
+- Database-only product catalog. The server refuses to start without a configured and reachable PostgreSQL database; the browser never falls back to bundled product data.
 
 ## Start locally
 
@@ -29,7 +29,7 @@ npm run dev
 
 Open `http://localhost:3000`. The server refuses to start unless both independent JWT secrets are configured, even in development. `npm test` runs the unit tests. `npm run db:migrate` is available for local iterative development; use the committed migration with `npm run db:deploy` for deployment.
 
-The seed imports the bundled catalog and preserves the original product IDs. It updates the demo product copy/prices, but does not reset stock or review aggregates on later runs. Do not treat this demo catalog seed as a production catalog-management workflow.
+The initial seed records live in `prisma/seed-products.js`; they are loaded into PostgreSQL only by the explicit seed command and are never served to browsers or used as a runtime fallback. These are starter catalog records, not a verified real-world inventory. Replace their names, prices, image URLs, and stock with your actual catalog before accepting customer orders. Re-running the seed updates product copy/prices but does not reset stock or review aggregates.
 
 ## Supported checkout market
 
@@ -73,18 +73,17 @@ All order, address, cart, and wishlist data is scoped to the authenticated user.
 - `server/` — Express app, auth middleware, routes, catalog/commerce helpers.
 - `prisma/schema.prisma` — PostgreSQL data model.
 - `prisma/migrations/` — committed initial migration, including the PostgreSQL full-text expression index and check constraints.
-- `prisma/seed.js` — original catalog import.
-- `js/`, `*.html`, `css/`, `data/` — storefront and browser API client.
+- `prisma/seed.js` and `prisma/seed-products.js` — explicit database seeding only.
+- `js/`, `*.html`, `css/` — storefront and browser API client; no bundled product catalog is loaded by the browser.
 - `tests/` — Node's built-in test runner.
 
 ## Verification boundary
 
-The package includes a database migration and Stripe integration code, but those live services need the operator's own `DATABASE_URL` and Stripe test credentials. Without them, the local catalog and unit tests work while database-backed account/checkout routes explicitly report their configuration requirement; no live database migration or real Stripe payment has been claimed or simulated.
+The package includes a database migration and Stripe integration code, but those live services need the operator's own `DATABASE_URL` and Stripe test credentials. The app refuses to start without a configured and reachable PostgreSQL database. If Stripe is not configured, checkout cannot complete; the application does not simulate orders or payments.
 
 The hardening tests cover JWT/config validation, refresh-token compare-and-swap behavior under concurrent requests, checkout calculations, and Stripe PaymentIntent amount/currency matching. They are unit tests and do not replace API integration tests against an isolated PostgreSQL database or Stripe sandbox webhook/payment-flow tests.
 
 ## Original project references
 
-- Live demo: https://shopcraft-wiyu.vercel.app/
 - Repository: https://github.com/kowshik5475/shopcraft
 - Original author information remains in the source project's prior documentation.

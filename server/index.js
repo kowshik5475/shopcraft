@@ -35,7 +35,6 @@ app.use(cookieParser());
 app.use("/api", apiLimiter);
 
 app.get("/api/health", async (_req, res) => {
-  if (!databaseEnabled) return res.status(200).json({ ok: true, database: "not-configured", mode: "local-demo" });
   try {
     await prisma.$queryRaw`SELECT 1`;
     return res.json({ ok: true, database: "connected", mode: "database-connected" });
@@ -78,14 +77,26 @@ app.use((req, res, next) => {
     pathname === "/" ||
     /^\/(?:index|products|product|cart|account|wishlist|orders|checkout|order-confirmation)\.html$/.test(pathname) ||
     /^\/css\/styles\.css$/.test(pathname) ||
-    /^\/js\/[a-zA-Z0-9_-]+\.js$/.test(pathname) ||
-    /^\/data\/products\.js$/.test(pathname);
+    /^\/js\/[a-zA-Z0-9_-]+\.js$/.test(pathname);
   if (!allowed) return next();
   return staticFiles(req, res, next);
 });
 app.get("*", (_req, res) => res.sendFile(path.join(root, "index.html")));
 
-const server = app.listen(port, () => console.log(`ShopCraft listening on ${port}; ${databaseEnabled ? "DATABASE_URL configured" : "local demo catalog mode"}`));
+if (!databaseEnabled) {
+  throw new Error("DATABASE_URL is required. Demo mode is disabled; configure PostgreSQL before starting ShopCraft.");
+}
+
+try {
+  await prisma.$connect();
+  await prisma.$queryRaw`SELECT 1`;
+} catch (error) {
+  console.error("ShopCraft startup failed: PostgreSQL is not reachable or not configured.");
+  await disconnectDatabase();
+  throw error;
+}
+
+const server = app.listen(port, () => console.log(`ShopCraft listening on ${port}; PostgreSQL connected`));
 for (const signal of ["SIGTERM", "SIGINT"]) {
   process.on(signal, async () => {
     server.close();

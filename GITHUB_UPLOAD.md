@@ -1,40 +1,40 @@
-# Uploading ShopCraft to GitHub safely
+# Uploading ShopCraft safely to GitHub
 
-This package is prepared as source code for a GitHub repository. It does not contain `node_modules`, a real `.env` file, local database files, or a `.git` directory.
+This repository has **runtime demo mode disabled**. The storefront reads product data from the Express API backed by PostgreSQL. The bundled starter catalog is used only by the explicit Prisma seed command.
 
 ## Before uploading
 
-1. Review `.env.example` and keep only placeholder values in it.
-2. Add real secrets only to your deployment provider's environment/secrets settings. Never commit `.env`, Stripe secret keys, webhook secrets, database passwords, or JWT secrets.
-3. Keep `package-lock.json` committed so installs can be reproduced.
-4. Do not upload `node_modules` or generated build/test output.
-5. The included `vercel.json` configures the storefront's clean URLs. The Express API must run on a compatible Node.js host unless you separately configure a supported serverless deployment. A static frontend deployment alone does not deploy the Express API.
+1. Confirm `.env` is not staged. Commit `.env.example` only.
+2. Do not include Stripe secret keys, JWT secrets, database credentials, private keys, production dumps, or customer data.
+3. Keep `package-lock.json` so installs are reproducible.
+4. Keep Prisma schema and migration files.
+5. Review the diff before committing:
 
-## Recommended update method for an existing GitHub repository
+   ```sh
+   git status --short
+   git diff --check
+   git diff --stat
+   ```
 
-Prefer using Git rather than uploading a ZIP over the repository in the browser:
+## Required runtime configuration
 
-```bash
-git clone https://github.com/kowshik5475/shopcraft.git
-cd shopcraft
-# Back up your current working tree, then copy the files from this package into this folder.
-git status --short
-git diff --check
-git diff --stat
-git diff
-```
+- PostgreSQL: `DATABASE_URL`
+- Independent random JWT secrets: `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET` (at least 32 characters each)
+- Exact browser origin: `APP_ORIGIN`
+- Stripe test-mode keys for sandbox checkout: `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`
+- `SHOPCRAFT_CRON_SECRET` and a scheduler for abandoned-order cleanup
 
-Review the diff before committing. Do not overwrite or delete repository files you intentionally need without checking them first. Then commit and push the reviewed changes.
+## First run
 
-## Local validation
-
-```bash
+```sh
 npm ci
 npm run db:generate
-npx prisma validate
+npm run db:deploy
+npm run db:seed
 npm test
+npm start
 ```
 
-Database-backed checks additionally require a PostgreSQL database configured through `DATABASE_URL`. Payment-flow checks require Stripe test-mode credentials and a configured test webhook. Do not use live payment credentials for development tests.
+The server intentionally refuses to start without a configured, reachable PostgreSQL database. The initial seed records in `prisma/seed-products.js` are starter data; replace them with your actual catalog and stock before accepting customer orders. Checkout must be tested with Stripe test mode and a signed webhook before it is considered verified.
 
-See `README.md` and `POST_UPGRADE_AUDIT.md` for setup instructions and the current verification boundary. The report does not claim that a real database migration, Stripe sandbox payment, or browser end-to-end purchase has been verified.
+Do not push directly to production until the PostgreSQL and Stripe sandbox checks in `POST_UPGRADE_AUDIT.md` have passed.

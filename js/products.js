@@ -1,5 +1,4 @@
-// Catalog filters are server-side when the API is reachable; the bundled
-// catalog is retained as an explicitly local demo fallback.
+// Product catalog data is always loaded from the live API.
 const PAGE_SIZE = 12;
 let currentPage = Math.max(1, Number(new URLSearchParams(location.search).get("page")) || 1);
 let renderRequest = 0;
@@ -28,21 +27,17 @@ document.addEventListener("DOMContentLoaded", async function () {
   const params = new URLSearchParams(location.search);
   const catSelect = document.getElementById("category-filter");
   try {
-    const result = await window.ShopCraftAPI?.request("/api/categories");
-    const categories = result?.data?.map(category => category.name) || CATEGORIES;
+    const result = await window.ShopCraftAPI.request("/api/categories");
+    const categories = result.data.map(category => category.name);
     categories.forEach(category => {
       const option = document.createElement("option");
       option.value = category;
       option.textContent = category;
       catSelect.appendChild(option);
     });
-  } catch {
-    CATEGORIES.forEach(category => {
-      const option = document.createElement("option");
-      option.value = category;
-      option.textContent = category;
-      catSelect.appendChild(option);
-    });
+  } catch (error) {
+    showCatalogUnavailable(error);
+    return;
   }
 
   if (params.get("category")) catSelect.value = params.get("category");
@@ -72,13 +67,12 @@ document.addEventListener("DOMContentLoaded", async function () {
     const wish = event.target.closest(".card-wishlist-btn");
     if (add) {
       const id = Number(add.dataset.id);
-      const product = liveCatalogProducts.get(id) || PRODUCTS.find(item => item.id === id);
-      if (product?.stock > 0) {
-        addToCart(id, 1);
-        showToast(`${product.name} added to cart!`);
-        add.textContent = "✓";
-        setTimeout(() => { add.textContent = "+"; }, 1200);
-      }
+      const product = liveCatalogProducts.get(id);
+      if (!product || product.stock < 1) return;
+      addToCart(id, 1);
+      showToast(`${product.name} added to cart!`);
+      add.textContent = "✓";
+      setTimeout(() => { add.textContent = "+"; }, 1200);
     }
     if (wish) {
       const saved = toggleWishlist(Number(wish.dataset.id));
@@ -116,9 +110,15 @@ async function render() {
   let data;
   try {
     data = await window.ShopCraftAPI.products(params);
-  } catch {
-    data = localProducts(params);
-    if (status) status.textContent = "Showing the bundled demo catalog. Start the API and configure PostgreSQL for persistent catalog data.";
+  } catch (error) {
+    if (requestId !== renderRequest) return;
+    grid.innerHTML = "";
+    count.textContent = "Catalog unavailable";
+    noResults.classList.add("hidden");
+    if (status) status.textContent = `Unable to load products from the store API. ${error.message} Check the database connection and try again.`;
+    grid.setAttribute("aria-busy", "false");
+    document.getElementById("pagination").replaceChildren();
+    return;
   }
   if (requestId !== renderRequest) return;
 
@@ -132,30 +132,9 @@ async function render() {
   noResults.classList.toggle("hidden", records.length > 0);
   if (records.length === 0) noResults.classList.remove("hidden");
   grid.setAttribute("aria-busy", "false");
-  if (status && data.source === "local-demo") status.textContent = "Local demo catalog · configure PostgreSQL to use persistent product data.";
-  else if (status && status.textContent === "Updating products…") status.textContent = "";
+  if (status) status.textContent = "";
   renderChips(state);
   renderPagination(currentPage, totalPages);
-}
-
-function localProducts(params) {
-  const { search = "", category = "", sort = "newest", minPrice = "", maxPrice = "", inStock = "", featured = "" } = params;
-  let found = [...PRODUCTS];
-  const term = search.toLowerCase();
-  if (term) found = found.filter(p => `${p.name} ${p.description} ${p.category}`.toLowerCase().includes(term));
-  if (category) found = found.filter(p => p.category.toLowerCase() === category.toLowerCase());
-  if (minPrice) found = found.filter(p => p.price >= Number(minPrice));
-  if (maxPrice) found = found.filter(p => p.price <= Number(maxPrice));
-  if (inStock === "true") found = found.filter(p => p.stock > 0);
-  if (featured === "true") found = found.filter(p => p.featured);
-  if (sort === "price_asc") found.sort((a, b) => a.price - b.price);
-  else if (sort === "price_desc") found.sort((a, b) => b.price - a.price);
-  else if (sort === "name") found.sort((a, b) => a.name.localeCompare(b.name));
-  else if (sort === "rating") found.sort((a, b) => b.rating - a.rating);
-  else found.sort((a, b) => b.id - a.id);
-  const page = Number(params.page) || 1;
-  const pageSize = Number(params.pageSize) || PAGE_SIZE;
-  return { data: found.slice((page - 1) * pageSize, page * pageSize), total: found.length, source: "local-demo" };
 }
 
 function renderProductCard(product) {
@@ -264,6 +243,17 @@ function clearAllFilters() {
   toggle.classList.remove("active");
   currentPage = 1;
   render();
+}
+
+function showCatalogUnavailable(error) {
+  const status = document.getElementById("catalog-status");
+  const grid = document.getElementById("product-grid");
+  const count = document.getElementById("results-count");
+  if (status) status.textContent = `The live product catalog is unavailable. ${error.message} Check the API and database configuration.`;
+  if (grid) grid.innerHTML = "";
+  if (count) count.textContent = "Catalog unavailable";
+  const noResults = document.getElementById("no-results");
+  noResults?.classList.add("hidden");
 }
 
 function showToast(message) {

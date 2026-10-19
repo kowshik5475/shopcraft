@@ -13,7 +13,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       const saved = await window.ShopCraftAPI.cart();
       cart = saved.items.map(item => ({ productId: item.productId, quantity: item.quantity }));
       localStorage.setItem("sc_cart", JSON.stringify(cart));
-    } catch { /* Continue with the local cart and let the server validate checkout. */ }
+    } catch (error) {
+      message.textContent = `Unable to load your account cart from the live API: ${error.message}`;
+      document.getElementById("prepare-payment").disabled = true;
+      return;
+    }
   }
   const items = await Promise.all(cart.map(async item => {
     try {
@@ -21,11 +25,17 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (result.product) return { product: normalizeShopCraftProduct(result.product), quantity: item.quantity };
     } catch (error) {
       if (error.status === 404) return null;
+      return new Error(error.message || "Product API unavailable");
     }
-    const product = PRODUCTS.find(entry => entry.id === Number(item.productId));
-    return product ? { product, quantity: item.quantity } : null;
+    return null;
   }));
   const availableItems = items.filter(Boolean);
+
+  if (items.some(item => item instanceof Error)) {
+    message.textContent = "Unable to load product details from the live store API. Check the backend and database connection.";
+    document.getElementById("prepare-payment").disabled = true;
+    return;
+  }
 
   if (!cart.length) {
     message.innerHTML = 'Your cart is empty. <a href="products.html">Browse the catalog</a>.';
@@ -56,7 +66,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const config = await window.ShopCraftAPI.publicConfig().catch(() => null);
   if (!config?.databaseConfigured) {
-    showConfig("Checkout is unavailable until PostgreSQL is configured, migrated, and seeded. This local demo will not simulate an order.");
+    showConfig("Checkout is unavailable until PostgreSQL is configured, migrated, and seeded. No simulated orders are available. Configure the live database and payment gateway before checkout.");
     document.getElementById("prepare-payment").disabled = true;
   } else if (!config.stripePublishableKey || typeof window.Stripe !== "function") {
     showConfig("Stripe sandbox checkout needs STRIPE_PUBLISHABLE_KEY configured on the backend and Stripe.js available in this browser.");
