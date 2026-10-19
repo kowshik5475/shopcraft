@@ -577,11 +577,21 @@ main.section > .container > .account-layout > #account-panel[hidden] {
     padding: 18px;
   }
 }
-/* Final account page spacing polish */
-main.section > .container > .account-layout {
-  margin-top: 12px;
+/* Center the Account page heading and subtitle */
+main.section > .container > .products-header {
+  justify-content: center;
+  text-align: center;
+  margin-bottom: 24px;
 }
 
-main.section > .container > .container > .products-header {
-  margin-bottom: 24px;
+main.section > .container > .products-header > div {
+  width: 100%;
+}
+
+main.section > .container > .products-header h1 {
+  text-align: center;
+}
+
+main.section > .container > .products-header p {
+  text-align: center;
 }
